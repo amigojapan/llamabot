@@ -1,2 +1,24 @@
 # llamabot
 IRC bot that serves up ollama llama2 AI
+
+installation instructions
+
+apt-get install git
+
+apt-get install lua5.3
+
+apt-get install liblua5.3-dev
+
+apt-get install luarocks
+
+luarocks install luasocket
+
+apt-get install lua-posix
+
+curl https://ollama.ai/install.sh | sh
+
+ollama run llama2
+
+/bye
+
+lua llamabot.lua nick channel
