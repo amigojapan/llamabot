@@ -14,6 +14,14 @@ function os.capture(cmd, raw)
     return s
 end
 
+function stripCRLF(str)
+    return str:gsub("\r\n$", "")
+end
+
+function removeApostrophes(inputString)
+    return inputString:gsub("'", "")
+end
+
 if(arg[1]) then
     nick = arg[1]
 else    
@@ -75,8 +83,10 @@ while true do
                     local start, finish = string.find(message, nick)
                     if start then
                         local _,aicommand=getBeforeAndAfterSTring(buffbuff,nick)
+                        aicommand=removeApostrophes(aicommand)
+                        aicommand = "a summary  " .. stripCRLF(aicommand) .. " in 240 characters or less in one line"
                         print("aicommand:"..aicommand)
-                        local command_line='user_input="' .. aicommand .. ", summarize your answer is less than 593 characters.".. '";command="ollama run llama2 \"$user_input\"";eval "$command"'
+                        local command_line='user_input="' .. aicommand .. '";command="ollama run llama2 \"$user_input\"";eval "$command"'
                         local output = os.capture(command_line,false)
                         print(output)
                         line = "privmsg " .. channel .. " :" .. output .. "\r\n"
