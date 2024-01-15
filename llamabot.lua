@@ -1,3 +1,4 @@
+#!/usr/bin/lua
 require "inkeylua"
 require "helperFunctions"
 --print("Welcome to voice internet relayed chat, press control plus C to quit")
@@ -19,7 +20,9 @@ function stripCRLF(str)
 end
 
 function removeApostrophes(inputString)
-    return inputString:gsub("'", "")
+    inputString=inputString:gsub("'", "")
+    inputString=inputString:gsub(";", "")
+    return inputString
 end
 
 if(arg[1]) then
@@ -27,6 +30,7 @@ if(arg[1]) then
 else    
     nick ="llamabot"
 end
+ 
 if(arg[2]) then
     channel = arg[2]
 else    
@@ -158,9 +162,8 @@ while true do
         end
     elseif not buff then
         -- A "real" error occurred
-        print(err)
-        os.exit(1)
+        print("error:" .. err)
+        --print("exiting")
+        --os.exit(1)
     end
-
-
 end
