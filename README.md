@@ -1,7 +1,7 @@
 # llamabot
 IRC bot that serves up ollama llama2 AI
 
-installation instructions
+installation instructions:
 
 apt-get install git
 
@@ -21,4 +21,16 @@ ollama run llama2
 
 /bye
 
-lua llamabot.lua nick channel
+lua llamabot.lua [nick] ["#channel"]
+
+usage in IRC:
+
+use !askai for questions to the ai
+
+!use !tellai to give commands or say a statement to the bot
+
+examples:
+
+!askai which is your favorite anime?
+
+!tellai learn that your nickname is llamabot
