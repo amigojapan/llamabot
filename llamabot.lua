@@ -3,6 +3,11 @@ require "inkeylua"
 require "helperFunctions"
 --print("Welcome to voice internet relayed chat, press control plus C to quit")
 socket = require("socket")
+print("starting llamabot")
+function getFirstWord(inputString)
+    local firstWord = string.match(inputString, "%S+")
+    return firstWord
+end
 
 function os.capture(cmd, raw)
     local f = assert(io.popen(cmd, 'r'))
@@ -22,6 +27,7 @@ end
 function removeApostrophes(inputString)
     inputString=inputString:gsub("'", "")
     inputString=inputString:gsub(";", "")
+    inputString=inputString:gsub("\"", "")
     return inputString
 end
 
@@ -41,7 +47,7 @@ server = "irc.libera.chat"
 
 client = socket.tcp()
 client:connect(server, 6667)
-client:settimeout(0)
+client:settimeout(0.5)
 
 user_input = ""
 print("waiting 15 seconds for connect...\r\n server, " .. server .. " channel, " .. channel .. "")
@@ -61,109 +67,138 @@ client:send(line)
 socket.sleep(2)
 
 buff = ""
-buffbuff=""
 afterEnter="not entered"
 userInputBefore=""
+buff=""
 while true do
-    buff, err = client:receive(1)
-    local str=""
-    if buff then
-        buffbuff=buffbuff..buff
-        str =string.sub(buff,#buff, #buff)
-    end
-    
-    if str == "\n" then
-        local before,after=getBeforeAndAfterSTring(buffbuff,"PRIVMSG")
-        if before then
-            local friendnick=findLastNick(buffbuff)
-            --local friendnick,after=getBeforeAndAfterSTring(buffbuff,"!")
-            if friendnick then
-                --local friendnick = string.sub(friendnick,2, #friendnick)
-                local _,message=getBeforeAndAfterSTring(buffbuff,channel.." :")
-                if message then
-                    local message=findLastMessage(buffbuff,channel)
-                    print("message from:"..friendnick..","..message)
-                    --find command
-                    local start, finish = string.find(message, nick)
-                    if start then
-                        local _,aicommand=getBeforeAndAfterSTring(buffbuff,nick)
-                        aicommand=removeApostrophes(aicommand)
-                        aicommand = "a summary  " .. stripCRLF(aicommand) .. " in 240 characters or less in one line"
-                        print("aicommand:"..aicommand)
-                        local command_line='user_input="' .. aicommand .. '";command="ollama run llama2 \"$user_input\"";eval "$command"'
-                        local output = os.capture(command_line,false)
-                        print(output)
-                        line = "privmsg " .. channel .. " :" .. output .. "\r\n"
-                        client:send(line)
-                    end
-                    buffbuff=""
-                end 
+    repeat
+        --client:receive"*l"
+        local chunk, err, partial = client:receive(1024)
+        if chunk then
+            buff = buff .. chunk
+        elseif partial and #partial > 0 then
+            buff = buff .. partial
+        elseif err ~= "timeout" then
+            if err == "closed" then
+                print("errors from socket, closed, probably ping timeout:", err)
+                print("exiting")
+                os.exit(1)          
             end
-            afterEnter="not entered"
         end
-        --io.write(buff)
-        -- Check for PING message
-        local ping_message = buffbuff:match("^PING :(.+)")
-        if ping_message then
-            print("PING received, responding with PONG")
-            line = "PONG :" .. ping_message .. "\r\n"
-            client:send(line)
-            socket.sleep(2)
-            buffbuff=""
+
+        local lastChar = string.sub(buff, -1)
+        if lastChar == "\n" then
+            local before,after=getBeforeAndAfterSTring(buff,"PRIVMSG")
+            if before then
+                local friendnick=findLastNick(buff)
+                --local friendnick,after=getBeforeAndAfterSTring(buffbuff,"!")
+                if friendnick then
+                    --local friendnick = string.sub(friendnick,2, #friendnick)
+                    local _,message=getBeforeAndAfterSTring(buff,channel.." :")
+                    if message then
+                        local message=findLastMessage(buff,channel)
+                        print("message from:"..friendnick..","..message)
+                        --find command
+                        local start, finish = string.find(message, "!askai")
+                        if start==1 then --this tests to see is !askai is at the beginning of the string
+                            --local _,aicommand=getBeforeAndAfterSTring(buff,nick)
+                            local _,aicommand=getBeforeAndAfterSTring(buff,"!askai")
+                            aicommand=removeApostrophes(aicommand)
+                            --maybe make two commands !tellai !askai
+                            aicommand = "a summary  " .. stripCRLF(aicommand) .. " in 240 characters or less in one line"
+                            print("aicommand:"..aicommand)
+                            local command_line='user_input="' .. aicommand .. '";command="ollama run llama2 \"$user_input\"";eval "$command"'
+                            local output = os.capture(command_line,false)
+                            print(output)
+                            line = "privmsg " .. channel .. " :" .. output .. "\r\n"
+                            client:send(line)
+                        end
+                        local start, finish = string.find(message, "!tellai")
+                        if start==1 then --this tests to see is !tellai is at the beginning of the string
+                            --local _,aicommand=getBeforeAndAfterSTring(buff,nick)
+                            local _,aicommand=getBeforeAndAfterSTring(buff,"!tellai")
+                            aicommand=removeApostrophes(aicommand)
+                            --maybe make two commands !tellai !askai
+                            aicommand = stripCRLF(aicommand)
+                            print("aicommand:"..aicommand)
+                            local command_line='user_input="' .. aicommand .. '";command="ollama run llama2 \"$user_input\"";eval "$command"'
+                            local output = os.capture(command_line,false)
+                            print(output)
+                            line = "privmsg " .. channel .. " :" .. output .. "\r\n"
+                            client:send(line)
+                        end
+                        buff=""
+                    end 
+                end
+                afterEnter="not entered"
+            end
+            -- Check for PING message
+            local ping_message = buff:match("^PING :(.+)")
+            if ping_message then
+                print("PING received, responding with PONG")
+                line = "PONG :" .. ping_message .. "\r\n"
+                client:send(line)
+
+                -- Remove the PING message from the buffer
+                local nextLinePos = buff:find("\n")
+                if nextLinePos then
+                    buff = buff:sub(nextLinePos + 1)
+                else
+                    buff = ""  -- If no newline found, clear the buffer
+                end
+            end
         end 
-    end
-        
-    if not buff and err == "timeout" then
-        -- No data available from the socket, handle input
-        socket.sleep(0.05) -- 50ms delay (20 checks per second)
-        local key = inkey()
-        if key then
-            -- Handle user input here
-            if key == '\x7f' then
-                -- Backspace pressed
-                user_input = user_input:sub(1, -2)
-                print("")
-                print(user_input)
-            elseif key == '\n' then
-                -- Enter pressed
-                
-                if afterEnter ~= "yes enter" then
+        --[[
+   This is another way to create
+   a multiline comment using a long string.
+  
+        if not buff and err == "timeout" then
+            -- No data available from the socket, handle input
+            socket.sleep(0.05) -- 50ms delay (20 checks per second)
+            local key = inkey()
+            if key then
+                -- Handle user input here
+                if key == '\x7f' then
+                    -- Backspace pressed
+                    user_input = user_input:sub(1, -2)
+                    print("")
                     print(user_input)
-                    print("send? Y for yes, N for no")
-                    userInputBefore=user_input
-                    user_input=""
-                    afterEnter="yes enter"
-                end
-                if afterEnter == "yes enter" then
-                    --print("user_input:"..user_input)
-                    if(string.lower(user_input)=="y") then
-                        line = "privmsg " .. channel .. " :" .. userInputBefore .. "\r\n"
-                        client:send(line)
-                        --print("sending:", line)
-                        socket.sleep(2)
-                        user_input = ""
-                        print("")
-                        afterEnter = "no enter"
-                        userInputBefore=""
-                        print("sent")
-                    elseif(string.lower(user_input)=="n") then
-                        afterEnter = "no enter"
+                elseif key == '\n' then
+                    -- Enter pressed
+                    
+                    if afterEnter ~= "yes enter" then
+                        print(user_input)
+                        print("send? Y for yes, N for no")
+                        userInputBefore=user_input
                         user_input=""
-                        userInputBefore=""
-                        print("cancelled")
+                        afterEnter="yes enter"
                     end
+                    if afterEnter == "yes enter" then
+                        --print("user_input:"..user_input)
+                        if(string.lower(user_input)=="y") then
+                            line = "privmsg " .. channel .. " :" .. userInputBefore .. "\r\n"
+                            client:send(line)
+                            --print("sending:", line)
+                            socket.sleep(2)
+                            user_input = ""
+                            print("")
+                            afterEnter = "no enter"
+                            userInputBefore=""
+                            print("sent")
+                        elseif(string.lower(user_input)=="n") then
+                            afterEnter = "no enter"
+                            user_input=""
+                            userInputBefore=""
+                            print("cancelled")
+                        end
+                    end
+                else
+                    -- Alphanumeric key pressed
+                    user_input = user_input .. key
+                    io.write(key)
+                    io.flush()
                 end
-            else
-                -- Alphanumeric key pressed
-                user_input = user_input .. key
-                io.write(key)
-                io.flush()
             end
-        end
-    elseif not buff then
-        -- A "real" error occurred
-        print("error:" .. err)
-        --print("exiting")
-        --os.exit(1)
-    end
+        ]]    
+    until not chunk
 end
