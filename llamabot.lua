@@ -27,7 +27,10 @@ end
 function removeApostrophes(inputString)
     inputString=inputString:gsub("'", "")
     inputString=inputString:gsub(";", "")
+    inputString=inputString:gsub("|", "")
     inputString=inputString:gsub("\"", "")
+    inputString=inputString:gsub(">", "")
+    inputString=inputString:gsub("<", "")
     return inputString
 end
 
@@ -86,6 +89,18 @@ while true do
             end
         end
 
+        -- Check for PING message
+        --local ping_message = buff:match("^PING :(.+)")
+        local ping_message = buff:match("PING :(.+)")
+        if ping_message then
+            print("PING received, responding with PONG")
+            line = "PONG :" .. ping_message .. "\r\n"
+            client:send(line)
+
+            -- Remove the PING message from the buffer
+            buff=""
+        end
+
         local lastChar = string.sub(buff, -1)
         if lastChar == "\n" then
             local before,after=getBeforeAndAfterSTring(buff,"PRIVMSG")
@@ -132,73 +147,6 @@ while true do
                 end
                 afterEnter="not entered"
             end
-            -- Check for PING message
-            local ping_message = buff:match("^PING :(.+)")
-            if ping_message then
-                print("PING received, responding with PONG")
-                line = "PONG :" .. ping_message .. "\r\n"
-                client:send(line)
-
-                -- Remove the PING message from the buffer
-                local nextLinePos = buff:find("\n")
-                if nextLinePos then
-                    buff = buff:sub(nextLinePos + 1)
-                else
-                    buff = ""  -- If no newline found, clear the buffer
-                end
-            end
-        end 
-        --[[
-   This is another way to create
-   a multiline comment using a long string.
-  
-        if not buff and err == "timeout" then
-            -- No data available from the socket, handle input
-            socket.sleep(0.05) -- 50ms delay (20 checks per second)
-            local key = inkey()
-            if key then
-                -- Handle user input here
-                if key == '\x7f' then
-                    -- Backspace pressed
-                    user_input = user_input:sub(1, -2)
-                    print("")
-                    print(user_input)
-                elseif key == '\n' then
-                    -- Enter pressed
-                    
-                    if afterEnter ~= "yes enter" then
-                        print(user_input)
-                        print("send? Y for yes, N for no")
-                        userInputBefore=user_input
-                        user_input=""
-                        afterEnter="yes enter"
-                    end
-                    if afterEnter == "yes enter" then
-                        --print("user_input:"..user_input)
-                        if(string.lower(user_input)=="y") then
-                            line = "privmsg " .. channel .. " :" .. userInputBefore .. "\r\n"
-                            client:send(line)
-                            --print("sending:", line)
-                            socket.sleep(2)
-                            user_input = ""
-                            print("")
-                            afterEnter = "no enter"
-                            userInputBefore=""
-                            print("sent")
-                        elseif(string.lower(user_input)=="n") then
-                            afterEnter = "no enter"
-                            user_input=""
-                            userInputBefore=""
-                            print("cancelled")
-                        end
-                    end
-                else
-                    -- Alphanumeric key pressed
-                    user_input = user_input .. key
-                    io.write(key)
-                    io.flush()
-                end
-            end
-        ]]    
+        end    
     until not chunk
 end
