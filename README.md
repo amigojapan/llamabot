@@ -21,6 +21,8 @@ ollama run llama2
 
 /bye
 
+git clone https://github.com/amigojapan/llamabot
+
 lua llamabot.lua [nick] ["#channel"]
 
 usage in IRC:
