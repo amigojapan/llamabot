@@ -31,6 +31,10 @@ function removeApostrophes(inputString)
     inputString=inputString:gsub("\"", "")
     inputString=inputString:gsub(">", "")
     inputString=inputString:gsub("<", "")
+    inputString=inputString:gsub("%(", "") --need % cause ( is a "magic character"
+    inputString=inputString:gsub("%)", "")
+    inputString=inputString:gsub("%[", "")
+    inputString=inputString:gsub("%]", "")
     return inputString
 end
 
@@ -140,6 +144,11 @@ while true do
                             local output = os.capture(command_line,false)
                             print(output)
                             line = "privmsg " .. channel .. " :" .. output .. "\r\n"
+                            client:send(line)
+                        end
+                        local start, finish = string.find(message, "!feliz cumpleaños")
+                        if start==1 then --this tests to see is !tellai is at the beginning of the string
+                            line = "privmsg " .. channel .. " : feliz cumpleaños zcom, de cosmicadventure y amigojapan! https://www.youtube.com/watch?v=cDT12zAWDuM \r\n"
                             client:send(line)
                         end
                         buff=""
