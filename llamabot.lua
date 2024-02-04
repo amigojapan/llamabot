@@ -34,7 +34,8 @@ function removeApostrophes(inputString)
     inputString=inputString:gsub("%(", "") --need % cause ( is a "magic character"
     inputString=inputString:gsub("%)", "")
     inputString=inputString:gsub("%[", "")
-    inputString=inputString:gsub("%]", "")
+    inputString=inputString:gsub("{", "")
+    inputString=inputString:gsub("}", "")
     return inputString
 end
 
@@ -95,9 +96,10 @@ while true do
 
         -- Check for PING message
         --local ping_message = buff:match("^PING :(.+)")
-        local ping_message = buff:match("PING :(.+)")
+        local ping_message = buff:match("PING :(.-)\n")
         if ping_message then
-            print("PING received, responding with PONG")
+            print("PING received, responding with PONG pong message:" .. ping_message .. "end")
+            
             line = "PONG :" .. ping_message .. "\r\n"
             client:send(line)
 
