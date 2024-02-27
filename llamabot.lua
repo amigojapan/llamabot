@@ -97,6 +97,7 @@ client = socket.tcp()
 client:connect(server, 6667)
 client:settimeout(0.5)
 
+
 user_input = ""
 print("waiting 5 seconds for connect...\r\n server, " .. server .. " channel, " .. channel .. "")
 socket.sleep(5) -- wait enough till logon
