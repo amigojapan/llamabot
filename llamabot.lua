@@ -162,12 +162,28 @@ while true do
                         print("message from:"..friendnick..","..message)
                         --find command
                         local start, finish = string.find(message, "!askai")
-                        if start==1 then --this tests to see is !askai is at the beginning of the string
+                        comienzo, finish = string.find(message, "!dimeia")
+                        lang="eng"
+                        if start==1 or comienzo == 1 then
+                            if comienzo == 1 then
+                                lang="es"
+                            end
+                             --this tests to see is !askai is at the beginning of the string
                             --local _,aicommand=getBeforeAndAfterSTring(buff,nick)
-                            local _,aicommand=getBeforeAndAfterSTring(buff,"!askai")
+                            local aicommand=nil
+                            if lang == "eng" then
+                                    _,aicommand=getBeforeAndAfterSTring(buff,"!askai")
+                            else 
+                                    _,aicommand=getBeforeAndAfterSTring(buff,"!dimeia")
+                            end
                             aicommand=removeApostrophes(aicommand)
-                            --maybe make two commands !tellai !askai
-                            aicommand = "a summary  " .. stripCRLF(aicommand) .. " in 240 characters or less in one line"
+                            
+                                --maybe make two commands !tellai !askai
+                            if lang == "es" then
+                                aicommand = "contesta es español : resumeme lo siguiente  " .. stripCRLF(aicommand) .. " en 240 letras o menos en una sola linea"
+                            else
+                                aicommand = "answer in english : a summary  " .. stripCRLF(aicommand) .. " in 240 characters or less in one line"
+                            end
                             print("aicommand:"..aicommand)
                             -- local command_line='user_input="' .. aicommand .. '";command="ollama run llama2 \"$user_input\"";eval "$command"'
                             -- local output = os.capture(command_line,false)
