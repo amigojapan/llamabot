@@ -117,15 +117,16 @@ user_input = ""
 print("waiting 5 seconds for connect...\r\n server, " .. server .. " channel, " .. channel .. "")
 socket.sleep(5) -- wait enough till logon
 
-line = "nick ".. nick .. "\r\nuser a a a a\r\n"
-print(line)
-client:send(line)
-
 if useznc then
     line = "PASS a:passwd"
     print(line)
     client:send(line)
 end
+
+line = "nick ".. nick .. "\r\nuser a a a a\r\n"
+print(line)
+client:send(line)
+
 
 socket.sleep(2)
 
