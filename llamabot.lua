@@ -47,7 +47,20 @@ function removeApostrophes(inputString)
     inputString=inputString:gsub("}", "")
     return inputString
 end
+function ping()
+    -- Check for PING message
+    --local ping_message = buff:match("^PING :(.+)")
+    local ping_message = buff:match("PING :(.-)\n")
+    if ping_message then
+        print("PING received, responding with PONG pong message:" .. ping_message .. "end")
+        
+        line = "PONG :" .. ping_message .. "\r\n"
+        client:send(line)
 
+        -- Remove the PING message from the buffer
+        buff=""
+    end
+end
 function post(uri,data)
     local res, code, headers, status = http.request {
         method = "POST",
@@ -91,6 +104,8 @@ else
     channel = "#BlindOE"
 end
 
+useznc=false --edit this if you use it
+
 server = "irc.libera.chat"
 
 client = socket.tcp()
@@ -103,9 +118,14 @@ print("waiting 5 seconds for connect...\r\n server, " .. server .. " channel, " 
 socket.sleep(5) -- wait enough till logon
 
 line = "nick ".. nick .. "\r\nuser a a a a\r\n"
---os.exit()
 print(line)
 client:send(line)
+
+if useznc then
+    line = "PASS a:passwd"
+    print(line)
+    client:send(line)
+end
 
 socket.sleep(2)
 
@@ -135,19 +155,8 @@ while true do
             end
         end
 
-        -- Check for PING message
-        --local ping_message = buff:match("^PING :(.+)")
-        local ping_message = buff:match("PING :(.-)\n")
-        if ping_message then
-            print("PING received, responding with PONG pong message:" .. ping_message .. "end")
-            
-            line = "PONG :" .. ping_message .. "\r\n"
-            client:send(line)
-
-            -- Remove the PING message from the buffer
-            buff=""
-        end
-
+        ping()
+        
         local lastChar = string.sub(buff, -1)
         if lastChar == "\n" then
             local before,after=getBeforeAndAfterSTring(buff,"PRIVMSG")
